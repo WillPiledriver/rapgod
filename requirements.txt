@@ -1,0 +1,4 @@
+urllib
+lxml
+requests
+nltk

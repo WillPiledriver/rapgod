@@ -42,3 +42,4 @@ while True:
     print("Search executed in {} seconds with {} paragraphs found.".format((times[1]-times[0]), c))
     pass
     del threads, targets, strings
+
