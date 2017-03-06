@@ -52,14 +52,14 @@ class googleAPI:
 		while (not worked) and (c < 5):
 			try:
 				times = [time.time(), time.time()]
-				page = self.session.get(url, timeout=5, stream=True)
+				page = self.session.get(url, timeout=10, stream=True)
 				if page.status_code != 200:
 					return None
 				content = b''
 				for chunk in page.iter_content(chunk_size=1024):
 					content += chunk
 					times[1] = time.time()
-					if times[1] - times[0] > 10:
+					if times[1] - times[0] > 25:
 						raise ValueError('StreamTimeout')
 				content = content.decode('utf-8')
 				tree = html.fromstring(content)
