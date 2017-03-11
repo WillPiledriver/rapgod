@@ -30,7 +30,8 @@ while True:
     for process in threads:
         process.join()
 
-    cleanStrings = [strings[x] for x in range(len(strings)) if not len(strings[x]) == 0]
+    cleanStrings = [[strings[x][xx].strip() for xx in range(len(strings[x])) if len(strings[x][xx].strip()) > 0] for x in range(len(strings)) if len(strings[x]) > 0]
+
     del strings
 
 # split the paragraphs into an array
@@ -39,7 +40,6 @@ while True:
 #            string[i][ii] = string[i][ii]
 #            splits.append(string[i][ii].encode('ascii', 'ignore').split())
     times[1] = time()
-#    for i in string:
     c = sum(map(len, cleanStrings))
 
     print("Search executed in {} seconds with {} paragraphs found.".format((times[1]-times[0]), c))
