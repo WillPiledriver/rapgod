@@ -16,10 +16,13 @@ while True:
 
     inputString = input("Type search query >")
 
+    # Get search query and collect urls from google
+
     times = [time(), time()]
     targets = handle.getGoogleURLs(inputString)
     strings = [[] for x in targets]
 
+    # Start a new thread for each target webpage collection to speed process
     for linkIndex in range(len(targets)):
         link = targets[linkIndex]
 
@@ -27,22 +30,23 @@ while True:
         process.start()
         threads.append(process)
 
+    # Wait for threads to finish processing
     for process in threads:
         process.join()
 
-    cleanStrings = [[strings[x][xx].strip() for xx in range(len(strings[x])) if len(strings[x][xx].strip()) > 0] for x in range(len(strings)) if len(strings[x]) > 0]
+    # Trim all whitespace and remove blank elements from the strings
+    strings = [[strings[x][xx].strip() for xx in range(len(strings[x])) if strings[x][xx].strip().count(" ") > 1] for x in range(len(strings)) if len(strings[x]) > 0]
+    strings = [strings[x] for x in range(len(strings)) if len(strings[x]) > 0]
 
-    del strings
 
-# split the paragraphs into an array
-#    for i in range(0, len(string)):
-#        for ii in range(0, len(string[i])):
-#            string[i][ii] = string[i][ii]
-#            splits.append(string[i][ii].encode('ascii', 'ignore').split())
     times[1] = time()
-    c = sum(map(len, cleanStrings))
+    c = sum(map(len, strings))
 
     print("Search executed in {} seconds with {} paragraphs found.".format((times[1]-times[0]), c))
-    pass
-    del threads, targets, cleanStrings
+    times = [time(), time()]
+
+    # TODO: Find most efficient way to build a matrix of rhyming strings
+
+
+    del threads, targets, strings
 
