@@ -68,9 +68,6 @@ while True:
     print("Search executed in {} seconds with {} paragraphs found.".format((times[1]-times[0]), len(strings)))
     times = [time(), time()]
 
-    # TODO: Find most efficient way to build a matrix of rhyming strings
-    # TODO: Make use of threading to generate rhyme candidates
-
     # Prepare strings variable to receive rhyme candidates
     strings = [{"string": strings[x]} for x in range(len(strings))]
 
@@ -94,6 +91,10 @@ while True:
 
     times[1] = time()
     print("It took {} seconds to finish finding all the rhyme candidates".format(times[1]-times[0]))
+
+
+    # TODO: Remove strings that have no rhyme candidates
+    # TODO: Match rhyming sentences
 
     del threads, targets, strings
 
