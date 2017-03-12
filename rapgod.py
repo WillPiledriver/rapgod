@@ -1,6 +1,6 @@
 import googleAPI
 import pronouncing
-from time import time
+from time import time, sleep
 from threading import Thread, activeCount
 
 def addTree(url, strings, index):
@@ -72,7 +72,7 @@ while True:
     strings = [{"string": strings[x]} for x in range(len(strings))]
 
     # Start a new thread for each string to find out all the rhyme candidates
-    # Maximum thread pool for this process is 100 threads.
+    # Maximum thread pool for this process is 50 threads.
     x = 0
     while x < len(strings):
         if activeCount() < 50:
@@ -84,6 +84,7 @@ while True:
             if x == len(strings):
                 break
             x += 1
+        sleep(0.025)
 
     # Wait for threads to finish processing
     for process in threads:
