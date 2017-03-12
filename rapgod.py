@@ -1,6 +1,7 @@
 import googleAPI
+import pronouncing
 from time import time
-from threading import Thread
+from threading import Thread, activeCount
 
 def addTree(url, strings, index):
     tree = handle.getTree(link)
@@ -8,6 +9,9 @@ def addTree(url, strings, index):
         strings[index] = tree.xpath("//p/text()")
     else:
         strings[index] = []
+
+def addCandidates(strings, index):
+    strings[index]["candidates"] = pronouncing.rhymes(strings[index]["string"].split(" ")[-1].replace(".", ""))
 
 
 while True:
@@ -34,19 +38,62 @@ while True:
     for process in threads:
         process.join()
 
-    # Trim all whitespace and remove blank elements from the strings
-    strings = [[strings[x][xx].strip() for xx in range(len(strings[x])) if strings[x][xx].strip().count(" ") > 1] for x in range(len(strings)) if len(strings[x]) > 0]
+    threads = []
+
+    # Trim all whitespace and remove any strings with less than 3 words
+    strings = [[strings[x][xx].strip()  for xx in range(len(strings[x])) if strings[x][xx].strip().count(" ") > 1] for x in range(len(strings)) if len(strings[x]) > 0]
+
+   # Remove any blank elements
     strings = [strings[x] for x in range(len(strings)) if len(strings[x]) > 0]
 
+    # Convert variable to one-dimensional array, and remove any duplicate paragraphs
+    strings = list(set([strings[x][xx] for x in range(len(strings)) for xx in range(len(strings[x]))]))
+
+    # Break paragraphs down into sentences or independent clauses*
+    #                                                              *results will vary
+    for delimiter in [". ", "! ", "? ", "\n", "\t", "\r"]:
+        for x in range(len(strings)):
+            # Removing unwanted characters from strings
+            for c in ["\\", "]", "[", "/"]: strings[x] = strings[x].replace(c, "")
+            paragraph = strings[x].split(delimiter)
+            if len(paragraph) > 1:
+                strings[x] = paragraph[0]
+                for xx in range(1, len(paragraph)):
+                    strings.append(paragraph[xx])
+
+    # Finally, removes any blank strings and sentences with under 3 words
+    strings = [strings[x] for x in range(len(strings)) if strings[x] is not "" and strings[x].count(" ") > 1]
 
     times[1] = time()
-    c = sum(map(len, strings))
-
-    print("Search executed in {} seconds with {} paragraphs found.".format((times[1]-times[0]), c))
+    print("Search executed in {} seconds with {} paragraphs found.".format((times[1]-times[0]), len(strings)))
     times = [time(), time()]
 
     # TODO: Find most efficient way to build a matrix of rhyming strings
+    # TODO: Make use of threading to generate rhyme candidates
 
+    # Prepare strings variable to receive rhyme candidates
+    strings = [{"string": strings[x]} for x in range(len(strings))]
+
+    # Start a new thread for each string to find out all the rhyme candidates
+    # Maximum thread pool for this process is 100 threads.
+    x = 0
+    while x < len(strings):
+        if activeCount() < 50:
+            process = Thread(target=addCandidates, args=[strings, x])
+            process.start()
+            threads.append(process)
+            if x % 100 == 0:
+                print(str(int(x / len(strings) * 100)) + "% complete")
+            if x == len(strings):
+                break
+            x += 1
+
+    # Wait for threads to finish processing
+    for process in threads:
+        process.join()
+
+    times[1] = time()
+    print("It took {} seconds to finish finding all the rhyme candidates".format(times[1]-times[0]))
 
     del threads, targets, strings
 
