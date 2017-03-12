@@ -11,7 +11,13 @@ def addTree(url, strings, index):
         strings[index] = []
 
 def addCandidates(strings, index):
-    strings[index]["candidates"] = pronouncing.rhymes(strings[index]["string"].split(" ")[-1].replace(".", ""))
+    lastWord = ''.join(filter(str.isalpha, strings[index]["string"].strip().split(" ")[-1])).lower()
+
+    strings[index]["candidates"] = pronouncing.rhymes(lastWord)
+#    if strings[index]["candidates"] == []:
+#        print(index, lastWord)
+
+    strings[index]["lastWords"] = lastWord
 
 
 while True:
@@ -54,7 +60,7 @@ while True:
     for delimiter in [". ", "! ", "? ", "\n", "\t", "\r"]:
         for x in range(len(strings)):
             # Removing unwanted characters from strings
-            for c in ["\\", "]", "[", "/"]: strings[x] = strings[x].replace(c, "")
+            for c in ["\\", "]", "[", "/", "\"", "'"]: strings[x] = strings[x].replace(c, "")
             paragraph = strings[x].split(delimiter)
             if len(paragraph) > 1:
                 strings[x] = paragraph[0]
@@ -75,20 +81,22 @@ while True:
     # Maximum thread pool for this process is 50 threads.
     x = 0
     while x < len(strings):
-        if activeCount() < 50:
-            process = Thread(target=addCandidates, args=[strings, x])
-            process.start()
-            threads.append(process)
-            if x % 100 == 0:
-                print(str(int(x / len(strings) * 100)) + "% complete")
-            if x == len(strings):
-                break
-            x += 1
-        sleep(0.025)
+#
+        #process = Thread(target=addCandidates, args=[strings, x])
+        #process.start()
+        #threads.append(process)
+        addCandidates(strings, x)
+        if x % 100 == 0:
+            times[1] = time()
+            print("{}% complete // {} sentences // {} threads // {} seconds // {} per second".format(int(x / len(strings) * 100), x, activeCount(), int(times[1]-times[0]), x / (times[1] + 0.00001 - times[0])))
+        if x == len(strings):
+            break
+        x += 1
+
 
     # Wait for threads to finish processing
-    for process in threads:
-        process.join()
+    #for process in threads:
+    #    process.join()
 
     times[1] = time()
     print("It took {} seconds to finish finding all the rhyme candidates".format(times[1]-times[0]))
@@ -96,6 +104,7 @@ while True:
 
     # TODO: Remove strings that have no rhyme candidates
     # TODO: Match rhyming sentences
+
 
     del threads, targets, strings
 
