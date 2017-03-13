@@ -11,15 +11,17 @@ def addTree(url, strings, index):
         strings[index] = []
 
 def addCandidates(strings, index):
-    lastWord = ''.join(filter(str.isalpha, strings[index]["string"].strip().split(" ")[-1])).lower()
+    lastWord = ''.join(filter(str.isalnum, strings[index]["string"].strip().split(" ")[-1])).lower()
+    strings[index]["candidates"] = pronouncing.rhymesFast(lastWord)
+    strings[index]["lastWord"] = lastWord
 
-    strings[index]["candidates"] = pronouncing.rhymes(lastWord)
-#    if strings[index]["candidates"] == []:
-#        print(index, lastWord)
+def canRhyme(s):
+    if "candidates" in s:
+        return len(s["candidates"]) > 0
+    else:
+        return False
 
-    strings[index]["lastWords"] = lastWord
-
-
+pronouncing.init_cmu()
 while True:
     handle = googleAPI.googleAPI()
     threads = []
@@ -49,7 +51,7 @@ while True:
     # Trim all whitespace and remove any strings with less than 3 words
     strings = [[strings[x][xx].strip()  for xx in range(len(strings[x])) if strings[x][xx].strip().count(" ") > 1] for x in range(len(strings)) if len(strings[x]) > 0]
 
-   # Remove any blank elements
+    # Remove any blank elements
     strings = [strings[x] for x in range(len(strings)) if len(strings[x]) > 0]
 
     # Convert variable to one-dimensional array, and remove any duplicate paragraphs
@@ -59,7 +61,7 @@ while True:
     #                                                              *results will vary
     for delimiter in [". ", "! ", "? ", "\n", "\t", "\r"]:
         for x in range(len(strings)):
-            # Removing unwanted characters from strings
+            # Remove unwanted characters from strings
             for c in ["\\", "]", "[", "/", "\"", "'"]: strings[x] = strings[x].replace(c, "")
             paragraph = strings[x].split(delimiter)
             if len(paragraph) > 1:
@@ -77,21 +79,12 @@ while True:
     # Prepare strings variable to receive rhyme candidates
     strings = [{"string": strings[x]} for x in range(len(strings))]
 
-    # Start a new thread for each string to find out all the rhyme candidates
-    # Maximum thread pool for this process is 50 threads.
-    x = 0
-    while x < len(strings):
-#
-        #process = Thread(target=addCandidates, args=[strings, x])
-        #process.start()
-        #threads.append(process)
+    # Find all rhyme candidates for each string
+    for x in range(len(strings)):
         addCandidates(strings, x)
-        if x % 100 == 0:
-            times[1] = time()
-            print("{}% complete // {} sentences // {} threads // {} seconds // {} per second".format(int(x / len(strings) * 100), x, activeCount(), int(times[1]-times[0]), x / (times[1] + 0.00001 - times[0])))
-        if x == len(strings):
-            break
-        x += 1
+
+    times[1] = time()
+
 
 
     # Wait for threads to finish processing
@@ -99,12 +92,32 @@ while True:
     #    process.join()
 
     times[1] = time()
-    print("It took {} seconds to finish finding all the rhyme candidates".format(times[1]-times[0]))
+    c = len(strings)
+    print("It took {} seconds to process {} words at a rate of {} words per second".format(times[1] - times[0], c, c /
+                                                                                    (times[1] + 0.00001 - times[0])))
 
+    # Remove strings that have no rhyme candidates
+    strings = list(filter(canRhyme, strings))
+    print("Removed {} entries // {}% of total".format(c-len(strings), int((c-len(strings)) / c * 100)))
 
-    # TODO: Remove strings that have no rhyme candidates
-    # TODO: Match rhyming sentences
+    times = [time(), time()]
+    #TODO: Match rhyming sentences
+    for x in range(len(strings)): strings[x]["matches"] = []
 
+    for x in range(len(strings)):
+        for xx in range(x + 1, len(strings)):
+            if(strings[xx]["lastWord"] in strings[x]["candidates"]):
+                #strings[x]["matches"].extend(strings[xx]["matches"])
+                #strings[xx]["matches"].extend(strings[x]["matches"])
+                strings[x]["matches"].append(xx)
+                strings[xx]["matches"].append(x)
+                #print("{}  //  {}".format(len(strings[x]["matches"]), len(strings[xx]["matches"])))
+
+                #print(strings[x]["lastWord"] + " " * (15 - len(strings[x]["lastWord"])) + " // " + strings[xx]["lastWord"])
+    times[1] = time()
+    cc = sum(map(len, (strings[x]["matches"] for x in range(len(strings))))) // 2
+    print("It took {} seconds to find approximately {} rhyming sentences from {} total sentences".format(
+        times[1]-times[0], cc, c))
 
     del threads, targets, strings
 
