@@ -49,10 +49,10 @@ class googleAPI:
 		worked = False
 		c = 0
 		tree = None
-		while (not worked) and (c < 5):
+		while (not worked) and (c < 30):
 			try:
 				times = [time.time(), time.time()]
-				page = self.session.get(url, timeout=10, stream=True)
+				page = self.session.get(url, timeout=30, stream=True)
 				if page.status_code != 200:
 					return None
 				content = b''

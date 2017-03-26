@@ -1,7 +1,8 @@
 import googleAPI
 import pronouncing
-from time import time, sleep
-from threading import Thread, activeCount
+from random import randint
+from time import time
+from threading import Thread
 
 def addTree(url, strings, index):
     tree = handle.getTree(link)
@@ -20,6 +21,14 @@ def canRhyme(s):
         return len(s["candidates"]) > 0
     else:
         return False
+
+def hasMatch(s):
+    return len(s["matches"]) > 0
+
+
+def helpSort(s):
+    return s["syllables"]
+
 
 pronouncing.init_cmu()
 while True:
@@ -101,9 +110,19 @@ while True:
     print("Removed {} entries // {}% of total".format(c-len(strings), int((c-len(strings)) / c * 100)))
 
     times = [time(), time()]
-    #TODO: Match rhyming sentences
+
+    # Add syllable count to strings
+    for x in range(len(strings)): strings[x]["syllables"] = pronouncing.syllable_count_string(strings[x]["string"])
+
+    # Sort strings by number of syllables
+    strings = sorted(strings, key=helpSort)[::-1]
+
+    # Prepare strings for rhyme matches
     for x in range(len(strings)): strings[x]["matches"] = []
 
+
+    # Link sentences that rhyme
+    # TODO: Improve this algorithm by .extend()ing matches
     for x in range(len(strings)):
         for xx in range(x + 1, len(strings)):
             if(strings[xx]["lastWord"] in strings[x]["candidates"]):
@@ -113,11 +132,20 @@ while True:
                 strings[xx]["matches"].append(x)
                 #print("{}  //  {}".format(len(strings[x]["matches"]), len(strings[xx]["matches"])))
 
-                #print(strings[x]["lastWord"] + " " * (15 - len(strings[x]["lastWord"])) + " // " + strings[xx]["lastWord"])
+    #strings = list(filter(hasMatch, strings))
+
     times[1] = time()
     cc = sum(map(len, (strings[x]["matches"] for x in range(len(strings))))) // 2
     print("It took {} seconds to find approximately {} rhyming sentences from {} total sentences".format(
-        times[1]-times[0], cc, c))
+        times[1] - times[0], cc, c))
+
+
+
+    for i in range(len(strings)):
+        dummy = input("Press Enter\n")
+        print(strings[i]["string"], " // ", len(strings[i]["matches"]))
+        for match in strings[i]["matches"]:
+            print(strings[match]["string"])
 
     del threads, targets, strings
 
